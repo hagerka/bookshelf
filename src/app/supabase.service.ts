@@ -11,7 +11,14 @@ export class SupabaseService {
     constructor() {
         this.supabase = createClient(
             environment.supabaseUrl,
-            environment.supabaseKey
+            environment.supabaseKey,
+            {
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true,
+                    detectSessionInUrl: true
+                }
+            }
         );
     }
 
@@ -37,7 +44,27 @@ export class SupabaseService {
         return this.supabase.auth.getUser();
     }
 
-    getBooks() {
-        return this.supabase.from('goodreads').select('*');
+    getBooks(page: number = 0, perPage: number = 10) {
+        const start = page * perPage;
+        const end = start + perPage - 1;
+        return this.supabase.from('books').select('*').order('date_read', { ascending: false }).range(start, end);
+    }
+
+    searchBook(term: string) {
+        const value = term.trim();
+
+        if (!value) {
+            return this.getBooks(0, 10);
+        }
+
+        return this.supabase
+            .from('books')
+            .select('*')
+            .or(`title.ilike.%${value}%,author.ilike.%${value}%,isbn.ilike.%${value}%`)
+            .limit(20);
+    }
+
+    getListLength() {
+        return this.supabase.from('books').select('*', { count: 'exact' });
     }
 }

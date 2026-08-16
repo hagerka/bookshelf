@@ -1,29 +1,42 @@
-<form class="flex flex-row items-center justify-center">
-    <input type="text" placeholder="Search for a book..." onInput="onSearchInput($event)" />
-    <input class="border border-amber-200 px-2" type="submit" value="Search" />
-</form>
+<section class="bookshelf-layout">
+    <form class="flex flex-row items-center justify-center" (submit)="searchBooks(); $event.preventDefault()">
+        <input class="search-input" type="text" [value]="searchTerm()"
+            (input)="searchTerm.set($any($event.target).value)" placeholder="Search for a book..." />
+        <button class="border border-amber-200 px-2" type="submit">Search</button>
+    </form>
 
-<div class="books-container mt-5">
-    @if (loading()) {
-    <p>Loading books...</p>
-    } @else if (books().length === 0) {
-    <p>No books found</p>
-    } @else {
-    <div class="books-list">
-        @for (book of books(); track book.book_id) {
-        <div class="book-item border p-3 mb-2  gap-3 flex flex-row justify-between h-auto">
-            <div>
-                <h3 class="max-w-50">{{ book.Title }}</h3>
-                <p>{{ book.Author }}</p>
+    <div class="books-container mt-5">
+        @if (loading()) {
+        <p>Loading books...</p>
+        } @else if (books().length === 0) {
+        <p class="text-center text-gray-500">No books found</p>
+        } @else {
+        <div class="books-list">
+            @for (book of books(); track book.id) {
+            <div class="book-item border p-3 mb-2  gap-3 flex flex-row justify-between h-auto">
+                <div>
+                    <h3 class="max-w-50">{{ book.title }}</h3>
+                    <p>{{ book.author }}</p>
+                </div>
+                @if (!hasFailedImage(book.isbn)) {
+                <figure>
+                    <img [src]="getImageUrl(book.isbn)" alt="{{ book.title }}" loading="lazy"
+                        (error)="onImageError(book.isbn)" (abort)="onImageError(book.isbn)" />
+                </figure>
+                }
             </div>
-            @if (!hasFailedImage(book.ISBN13)) {
-            <figure>
-                <img [src]="getImageUrl(book.ISBN13)" alt="{{ book.Title }}" loading="lazy"
-                    (error)="onImageError(book.ISBN13)" (abort)="onImageError(book.ISBN13)" />
-            </figure>
             }
         </div>
         }
     </div>
-    }
-</div>
+
+    <app-navigation [page]="page()" [perPage]="perPage()" [listLength]="totalBooks()" [canGoPrevious]="canGoPrevious()"
+        [canGoNext]="canGoNext()" (pageChange)="onPageChange($event)">
+    </app-navigation>
+
+    <footer class="footer p-5 text-center">
+        <a href="https://openlibrary.org/" target="_blank" rel="noopener noreferrer">
+            Book cover images provided by Open Library
+        </a>
+    </footer>
+</section>

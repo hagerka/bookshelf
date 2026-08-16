@@ -1,0 +1,4 @@
+<nav class="navigation-bar" aria-label="Book navigation">
+  <button type="button" [disabled]="!canGoPrevious" (click)="previousPage()">Previous</button>
+  <button type="button" [disabled]="!canGoNext" (click)="nextPage()">Next</button>
+</nav>
