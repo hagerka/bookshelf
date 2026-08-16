@@ -26,6 +26,9 @@ export class SupabaseService {
         return this.supabase.auth.signUp({
             email,
             password,
+            options: {
+                emailRedirectTo: `${environment.appUrl}/login`
+            }
         });
     }
 
