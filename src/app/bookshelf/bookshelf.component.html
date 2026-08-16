@@ -1,0 +1,29 @@
+<form class="flex flex-row items-center justify-center">
+    <input type="text" placeholder="Search for a book..." onInput="onSearchInput($event)" />
+    <input class="border border-amber-200 px-2" type="submit" value="Search" />
+</form>
+
+<div class="books-container mt-5">
+    @if (loading()) {
+    <p>Loading books...</p>
+    } @else if (books().length === 0) {
+    <p>No books found</p>
+    } @else {
+    <div class="books-list">
+        @for (book of books(); track book.book_id) {
+        <div class="book-item border p-3 mb-2  gap-3 flex flex-row justify-between h-auto">
+            <div>
+                <h3 class="max-w-50">{{ book.Title }}</h3>
+                <p>{{ book.Author }}</p>
+            </div>
+            @if (!hasFailedImage(book.ISBN13)) {
+            <figure>
+                <img [src]="getImageUrl(book.ISBN13)" alt="{{ book.Title }}" loading="lazy"
+                    (error)="onImageError(book.ISBN13)" (abort)="onImageError(book.ISBN13)" />
+            </figure>
+            }
+        </div>
+        }
+    </div>
+    }
+</div>

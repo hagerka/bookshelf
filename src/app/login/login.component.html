@@ -1,0 +1,39 @@
+<div class="login-container">
+    <div class="login-card">
+        <h1>{{ isSignUp() ? 'Sign Up' : 'Sign In' }}</h1>
+
+        @if (error()) {
+        <div class="error-message">{{ error() }}</div>
+        }
+
+        <form (ngSubmit)="handleAuth()">
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input id="email" type="email" [(ngModel)]="email" name="email" placeholder="Enter your email"
+                    required />
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input id="password" type="password" [(ngModel)]="password" name="password"
+                    placeholder="Enter your password" required />
+            </div>
+
+            <button type="submit" [disabled]="loading()">
+                {{ loading() ? 'Loading...' : (isSignUp() ? 'Sign Up' : 'Sign In') }}
+            </button>
+        </form>
+
+        <div class="toggle-mode">
+            @if (isSignUp()) {
+            <p>Already have an account?
+                <button type="button" (click)="toggleMode()" class="link-button">Sign In</button>
+            </p>
+            } @else {
+            <p>Don't have an account?
+                <button type="button" (click)="toggleMode()" class="link-button">Sign Up</button>
+            </p>
+            }
+        </div>
+    </div>
+</div>
