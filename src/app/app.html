@@ -1,0 +1,20 @@
+<header>
+    <h1 class="p-5 text-2xl">Welcome to the Arrangable Bookshelf</h1>
+</header>
+<main class="main p-5 flex flex-col items-center justify-center">
+    <div class="flex flex-col items-center justify-center">
+        <div class="flex flex-col items-center justify-center">
+            <p class="text-lg">This is a simple bookshelf app that allows you to arrange your books in any order you
+                like.</p>
+            <p class="text-lg">You can add, remove, and rearrange your books as you see fit.</p>
+        </div>
+    </div>
+    <form class="items-center justify-center">
+        <input  type="text" placeholder="Search for a book..." 
+            onInput="onSearchInput($event)" />
+        <input class="border border-amber-200 px-2" type="submit" value="Search" />
+    </form>
+</main>
+
+
+<router-outlet />
