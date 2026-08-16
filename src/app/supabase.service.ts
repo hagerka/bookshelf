@@ -70,4 +70,60 @@ export class SupabaseService {
     getListLength() {
         return this.supabase.from('books').select('*', { count: 'exact' });
     }
+
+    async addBook(book: { title: string; author: string; isbn?: string; date_read?: string; notes?: string | null; rating?: number | null }) {
+        const { data: userData, error: userError } = await this.supabase.auth.getUser();
+
+        if (userError || !userData.user) {
+            return { error: userError ?? new Error('No authenticated user') };
+        }
+
+        const { data: existingBook, error: existingBookError } = await this.supabase
+            .from('books')
+            .select('id')
+            .eq('isbn', book.isbn || '')
+            .maybeSingle();
+
+        if (existingBookError && existingBookError.code !== 'PGRST116') {
+            return { error: existingBookError };
+        }
+
+        let bookId = existingBook?.id;
+
+        if (!bookId) {
+            const { data: insertedBook, error: insertError } = await this.supabase
+                .from('books')
+                .insert([
+                    {
+                        title: book.title,
+                        author: book.author,
+                        isbn: book.isbn || null,
+                    }
+                ])
+                .select('id')
+                .single();
+
+            if (insertError) {
+                return { error: insertError };
+            }
+
+            bookId = insertedBook.id;
+        }
+
+        const { data, error } = await this.supabase
+            .from('user_books')
+            .insert([
+                {
+                    user_id: userData.user.id,
+                    book_id: bookId,
+                    notes: book.notes || null,
+                    rating: typeof book.rating === 'number' ? Math.round(book.rating) : null,
+                    date_read: book.date_read || new Date().toISOString().slice(0, 10),
+                    status: 'completed',
+                }
+            ])
+            .select();
+
+        return { data, error };
+    }
 }

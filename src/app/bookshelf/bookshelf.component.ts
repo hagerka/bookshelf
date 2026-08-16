@@ -1,11 +1,13 @@
 import { Component, Output, signal, OnInit } from '@angular/core';
 import { NavigationComponent } from '../navigation/navigation.component';
 import { SupabaseService } from '../supabase.service';
+import { SearchComponent } from "../search/search.component";
+import { AddComponent } from '../add/add.component';
 
 @Component({
     selector: 'app-bookshelf',
     standalone: true,
-    imports: [NavigationComponent],
+    imports: [NavigationComponent, SearchComponent, AddComponent],
     templateUrl: './bookshelf.component.html',
     styleUrl: './bookshelf.component.css'
 })
@@ -17,6 +19,7 @@ export class BookshelfComponent implements OnInit {
     perPage = signal(10);
     totalBooks = signal(0);
     searchTerm = signal('');
+    showAddModal = signal(false);
 
     constructor(private supabaseService: SupabaseService) { }
 
@@ -80,8 +83,8 @@ export class BookshelfComponent implements OnInit {
         this.loadBooks();
     }
 
-    searchBooks() {
-        const term = this.searchTerm().trim();
+    searchBooks(termOverride?: string) {
+        const term = (termOverride ?? this.searchTerm()).trim();
 
         this.page.set(0);
 
@@ -96,6 +99,40 @@ export class BookshelfComponent implements OnInit {
                 console.error(result.error);
             } else {
                 this.books.set(result.data || []);
+            }
+            this.loading.set(false);
+        });
+    }
+
+    onSearch(term: string) {
+        this.searchTerm.set(term);
+        this.searchBooks(term);
+    }
+
+    onAddBook(book: any) {
+        const ratingValue = Number(book.rating);
+        const normalizedRating = Number.isFinite(ratingValue)
+            ? Math.round(ratingValue)
+            : null;
+
+        const payload = {
+            title: book.title?.trim(),
+            author: (book.author || '').trim(),
+            isbn: book.isbn?.trim(),
+            date_read: book.date_read || new Date().toISOString().slice(0, 10),
+            notes: book.notes?.trim() || null,
+            rating: normalizedRating,
+        };
+
+        this.loading.set(true);
+        this.supabaseService.addBook(payload).then((result) => {
+            if (result.error) {
+                console.error(result.error);
+            } else {
+                this.showAddModal.set(false);
+                this.page.set(0);
+                this.loadTotalBooks();
+                this.loadBooks();
             }
             this.loading.set(false);
         });

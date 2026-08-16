@@ -6,6 +6,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
   templateUrl: './navigation.component.html',
   styleUrl: './navigation.component.css'
 })
+
 export class NavigationComponent {
   @Input() page = 0;
   @Input() perPage = 10;

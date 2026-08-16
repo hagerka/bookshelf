@@ -1,0 +1,71 @@
+@if (isOpen) {
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
+    <div class="w-full max-w-xl rounded-lg border border-slate-300 bg-white p-6 shadow-2xl">
+        <div class="mb-4 flex items-center justify-between">
+            <h2 class="text-xl font-semibold text-slate-900">Add Book</h2>
+            <button type="button" class="text-2xl leading-none text-slate-800 hover:text-slate-950"
+                (click)="closeModal()" aria-label="Close add-book modal">
+                ×
+            </button>
+        </div>
+
+        <form class="space-y-4" (submit)="submitBook(); $event.preventDefault()">
+            <div>
+                <label class="mb-1 block text-sm font-medium text-slate-900">Title</label>
+                <input type="text" [(ngModel)]="form.title" name="title"
+                    class="w-full rounded border border-slate-300 bg-white p-2 text-slate-900 placeholder:text-slate-500"
+                    required />
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-slate-900">Author First Name</label>
+                    <input type="text" [(ngModel)]="form.author_first_name" name="author_first_name"
+                        class="w-full rounded border border-slate-300 bg-white p-2 text-slate-900 placeholder:text-slate-500" />
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-slate-900">Author Last Name</label>
+                    <input type="text" [(ngModel)]="form.author_last_name" name="author_last_name"
+                        class="w-full rounded border border-slate-300 bg-white p-2 text-slate-900 placeholder:text-slate-500" />
+                </div>
+            </div>
+
+            <div>
+                <label class="mb-1 block text-sm font-medium text-slate-900">ISBN</label>
+                <input type="text" [(ngModel)]="form.isbn" name="isbn"
+                    class="w-full rounded border border-slate-300 bg-white p-2 text-slate-900 placeholder:text-slate-500" />
+            </div>
+
+            <div>
+                <label class="mb-1 block text-sm font-medium text-slate-900">Date Read</label>
+                <input type="date" [(ngModel)]="form.date_read" name="date_read"
+                    class="w-full rounded border border-slate-300 bg-white p-2 text-slate-900" />
+            </div>
+
+            <div>
+                <label class="mb-1 block text-sm font-medium text-slate-900">Rating (out of 5)</label>
+                <input type="number" [(ngModel)]="form.rating" name="rating" min="0" max="5" step="1"
+                    class="w-full rounded border border-slate-300 bg-white p-2 text-slate-900" />
+            </div>
+
+            <div>
+                <label class="mb-1 block text-sm font-medium text-slate-900">Notes</label>
+                <textarea [(ngModel)]="form.notes" name="notes" rows="3"
+                    class="w-full rounded border border-slate-300 bg-white p-2 text-slate-900"></textarea>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" class="rounded border border-slate-300 px-4 py-2 text-slate-800"
+                    (click)="closeModal()">
+                    Cancel
+                </button>
+                <button type="submit"
+                    class="rounded bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800">
+                    Save Book
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+}

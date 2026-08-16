@@ -1,0 +1,5 @@
+<form class="flex flex-row items-center justify-center" (submit)="submitSearch(); $event.preventDefault()">
+    <input class="search-input" type="text" [value]="searchTerm" (input)="searchTerm = $any($event.target).value"
+        placeholder="Search for a book..." />
+    <button class="border border-amber-200 px-2" type="submit">Search</button>
+</form>

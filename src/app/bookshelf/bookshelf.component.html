@@ -1,13 +1,13 @@
 <section class="bookshelf-layout">
-    <form class="flex flex-row items-center justify-center" (submit)="searchBooks(); $event.preventDefault()">
-        <input class="search-input" type="text" [value]="searchTerm()"
-            (input)="searchTerm.set($any($event.target).value)" placeholder="Search for a book..." />
-        <button class="border border-amber-200 px-2" type="submit">Search</button>
-    </form>
-
+    <div class="flex items-center justify-center gap-3 mb-4">
+        <app-search [searchTerm]="searchTerm()" (search)="onSearch($event)"></app-search>
+        <button type="button" class="add-book" (click)="showAddModal.set(true)">
+            Add Book
+        </button>
+    </div>
     <div class="books-container mt-5">
         @if (loading()) {
-        <p>Loading books...</p>
+        <p class="text-center">Loading books...</p>
         } @else if (books().length === 0) {
         <p class="text-center text-gray-500">No books found</p>
         } @else {
@@ -33,6 +33,8 @@
     <app-navigation [page]="page()" [perPage]="perPage()" [listLength]="totalBooks()" [canGoPrevious]="canGoPrevious()"
         [canGoNext]="canGoNext()" (pageChange)="onPageChange($event)">
     </app-navigation>
+
+    <app-add [isOpen]="showAddModal()" (close)="showAddModal.set(false)" (save)="onAddBook($event)"></app-add>
 
     <footer class="footer p-5 text-center">
         <a href="https://openlibrary.org/" target="_blank" rel="noopener noreferrer">
