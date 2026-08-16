@@ -1,12 +1,18 @@
+:host {
+  display: block;
+  min-height: calc(100vh - 170px);
+}
+
 .login-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
+  min-height: calc(100vh - 170px);
   background:
     radial-gradient(circle at top, rgba(181, 122, 58, 0.14), transparent 35%),
     linear-gradient(180deg, #0f1b17 0%, #17241d 100%);
   padding: 2rem;
+  box-sizing: border-box;
 }
 
 .login-card {

@@ -50,10 +50,33 @@ app-navigation {
     font-family: Georgia, 'Times New Roman', serif;
 }
 
+.book-item figure {
+    margin: 0;
+    width: 70px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(181, 122, 58, 0.35);
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
 .book-item img {
-    width: 150px;
-    height: 200px;
+    width: 70px;
+    height: 100px;
     object-fit: cover;
+    display: block;
+    transition: width 0.2s ease, height 0.2s ease, opacity 0.2s ease;
+    opacity: 1;
+}
+
+.book-item img:not([src]),
+.book-item img[src=""],
+.book-item img[src="undefined"] {
+    opacity: 0;
 }
 
 .footer {
