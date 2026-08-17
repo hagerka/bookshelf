@@ -1,18 +1,19 @@
 import { BookshelfComponent } from './bookshelf.component';
 import { SupabaseService } from '../supabase.service';
+import { vi } from 'vitest';
 
 describe('BookshelfComponent', () => {
     let component: BookshelfComponent;
-    let supabaseService: jasmine.SpyObj<SupabaseService>;
+    let supabaseService: SupabaseService;
 
     beforeEach(() => {
-        supabaseService = jasmine.createSpyObj<SupabaseService>('SupabaseService', [
-            'getListLength',
-            'getBooks',
-            'searchBook',
-            'addBook',
-            'updateBookPosition',
-        ]);
+        supabaseService = {
+            getListLength: vi.fn().mockResolvedValue({ error: null, count: 3 }),
+            getBooks: vi.fn().mockResolvedValue({ error: null, data: [] }),
+            searchBook: vi.fn().mockResolvedValue({ error: null, data: [] }),
+            addBook: vi.fn().mockResolvedValue({ error: null, data: null }),
+            updateBookPosition: vi.fn().mockResolvedValue({ error: null }),
+        } as any;
 
         component = new BookshelfComponent(supabaseService);
         component.books.set([
@@ -57,11 +58,11 @@ describe('BookshelfComponent', () => {
     });
 
     it('should toggle order locking and show the full list when unlocked', () => {
-        expect(component.orderLocked()).toBeTrue();
+        expect(component.orderLocked()).toBe(true);
 
         component.toggleOrderLock();
 
-        expect(component.orderLocked()).toBeFalse();
+        expect(component.orderLocked()).toBe(false);
         expect(component.effectivePerPage).toBeGreaterThan(10);
     });
 
