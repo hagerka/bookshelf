@@ -22,25 +22,52 @@ app-navigation {
 
 .books-list {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 16px;
+    padding: 8px 12px 20px;
 }
 
 .book-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     background: linear-gradient(180deg, #3b2a1f 0%, #2c1f1a 100%);
     border: 1px solid rgba(181, 122, 58, 0.7);
     border-left: 5px solid #b57a3a;
     border-radius: 14px;
-    min-width: 300px;
-    padding: 12px 14px;
+    width: 170px;
+    min-height: 220px;
+    padding: 14px 12px 12px;
+    cursor: default;
     box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
+}
+
+.book-item[draggable="true"] {
+    cursor: grab;
+}
+
+.book-item[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+.book-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+    min-height: 80px;
 }
 
 .book-item h3 {
     margin: 0 0 8px 0;
     color: #f3e7d2;
     font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1rem;
+    line-height: 1.3;
 }
 
 .book-item p {
@@ -51,9 +78,9 @@ app-navigation {
 }
 
 .book-item figure {
-    margin: 0;
-    width: 70px;
-    height: 100px;
+    margin: 12px 0 0;
+    width: 90px;
+    height: 120px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -65,8 +92,8 @@ app-navigation {
 }
 
 .book-item img {
-    width: 70px;
-    height: 100px;
+    width: 90px;
+    height: 120px;
     object-fit: cover;
     display: block;
     transition: width 0.2s ease, height 0.2s ease, opacity 0.2s ease;
@@ -142,4 +169,73 @@ button.add-book:active {
 button.add-book:focus-visible {
     outline: 2px solid rgba(210, 157, 93, 0.8);
     outline-offset: 2px;
+}
+
+.order-toggle-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.15rem 0.35rem;
+    border-radius: 999px;
+    color: #f3e7d2;
+}
+
+.toggle-caption,
+.toggle-state-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #f3e7d2;
+}
+
+.order-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 64px;
+    height: 32px;
+    padding: 0;
+    border: 2px solid rgba(181, 122, 58, 0.75);
+    background: rgba(60, 49, 38, 0.9);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.order-toggle:focus-visible {
+    outline: 3px solid rgba(255, 209, 140, 0.9);
+    outline-offset: 3px;
+}
+
+.order-toggle.is-unlocked {
+    background: linear-gradient(180deg, #c68846 0%, #a96c29 100%);
+    border-color: #eab76e;
+}
+
+.toggle-track {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 999px;
+}
+
+.toggle-thumb {
+    position: absolute;
+    top: 3px;
+    left: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #f3e7d2;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
+    transition: transform 0.2s ease;
+}
+
+.order-toggle.is-unlocked .toggle-thumb {
+    transform: translateX(30px);
+    background: #fffaf2;
 }

@@ -47,28 +47,173 @@ export class SupabaseService {
         return this.supabase.auth.getUser();
     }
 
-    getBooks(page: number = 0, perPage: number = 10) {
-        const start = page * perPage;
-        const end = start + perPage - 1;
-        return this.supabase.from('books').select('*').order('date_read', { ascending: false }).range(start, end);
+    private mapUserBookEntry(entry: any, fallbackIndex: number = 0) {
+        const bookDetails = entry?.books ?? {};
+        const hasRow = typeof entry?.row === 'number';
+        const hasColumn = typeof entry?.column === 'number';
+
+        return {
+            user_book_id: entry?.id ?? null,
+            book_id: entry?.book_id ?? bookDetails?.id ?? null,
+            id: bookDetails?.id ?? entry?.book_id ?? null,
+            title: bookDetails?.title ?? '',
+            author: bookDetails?.author ?? '',
+            isbn: bookDetails?.isbn ?? '',
+            row: hasRow ? entry.row : 0,
+            column: hasColumn ? entry.column : fallbackIndex,
+        };
     }
 
-    searchBook(term: string) {
+    async getBooks(page: number = 0, perPage: number = 10) {
+        const { data: userData, error: userError } = await this.supabase.auth.getUser();
+
+        if (userError || !userData.user) {
+            return { error: userError ?? new Error('No authenticated user'), data: [] };
+        }
+
+        const start = page * perPage;
+        const end = start + perPage - 1;
+
+        const { data, error } = await this.supabase
+            .from('user_books')
+            .select('id, user_id, book_id, row, column, books(id, title, author, isbn)')
+            .eq('user_id', userData.user.id)
+            .order('row', { ascending: true })
+            .order('column', { ascending: true })
+            .range(start, end);
+
+        if (!error && (data ?? []).length > 0) {
+            const normalizedEntries = (data ?? []).map((entry: any, index: number) => this.mapUserBookEntry(entry, index));
+
+            normalizedEntries.forEach((entry: any, index: number) => {
+                const needsInitialPosition = entry.user_book_id && (
+                    typeof entry.row !== 'number' || typeof entry.column !== 'number' || entry.column === null
+                );
+
+                if (needsInitialPosition) {
+                    this.supabase
+                        .from('user_books')
+                        .update({ row: 0, column: index })
+                        .eq('id', entry.user_book_id)
+                        .then();
+                }
+            });
+
+            return {
+                data: normalizedEntries,
+                error: null,
+            };
+        }
+
+        const fallback = await this.supabase
+            .from('books')
+            .select('*')
+            .order('date_read', { ascending: false })
+            .range(start, end);
+
+        if (fallback.error) {
+            return { error: fallback.error, data: [] };
+        }
+
+        return {
+            data: (fallback.data ?? []).map((book: any) => ({
+                ...book,
+                user_book_id: book.user_book_id ?? null,
+                book_id: book.id,
+                row: typeof book.row === 'number' ? book.row : 0,
+                column: typeof book.column === 'number' ? book.column : 0,
+            })),
+            error: null,
+        };
+    }
+
+    async searchBook(term: string) {
         const value = term.trim();
 
         if (!value) {
             return this.getBooks(0, 10);
         }
 
-        return this.supabase
+        const { data: userData, error: userError } = await this.supabase.auth.getUser();
+
+        if (userError || !userData.user) {
+            return { error: userError ?? new Error('No authenticated user'), data: [] };
+        }
+
+        const { data, error } = await this.supabase
+            .from('user_books')
+            .select('id, user_id, book_id, row, column, books(id, title, author, isbn)')
+            .eq('user_id', userData.user.id)
+            .or(`books.title.ilike.%${value}%,books.author.ilike.%${value}%,books.isbn.ilike.%${value}%`)
+            .limit(20);
+
+        if (!error && (data ?? []).length > 0) {
+            const normalizedEntries = (data ?? []).map((entry: any, index: number) => this.mapUserBookEntry(entry, index));
+
+            normalizedEntries.forEach((entry: any, index: number) => {
+                const needsInitialPosition = entry.user_book_id && (
+                    typeof entry.row !== 'number' || typeof entry.column !== 'number' || entry.column === null
+                );
+
+                if (needsInitialPosition) {
+                    this.supabase
+                        .from('user_books')
+                        .update({ row: 0, column: index })
+                        .eq('id', entry.user_book_id)
+                        .then();
+                }
+            });
+
+            return {
+                data: normalizedEntries,
+                error: null,
+            };
+        }
+
+        const fallback = await this.supabase
             .from('books')
             .select('*')
             .or(`title.ilike.%${value}%,author.ilike.%${value}%,isbn.ilike.%${value}%`)
             .limit(20);
+
+        if (fallback.error) {
+            return { error: fallback.error, data: [] };
+        }
+
+        return {
+            data: (fallback.data ?? []).map((book: any) => ({
+                ...book,
+                user_book_id: book.user_book_id ?? null,
+                book_id: book.id,
+                row: typeof book.row === 'number' ? book.row : 0,
+                column: typeof book.column === 'number' ? book.column : 0,
+            })),
+            error: null,
+        };
     }
 
-    getListLength() {
-        return this.supabase.from('books').select('*', { count: 'exact' });
+    async getListLength() {
+        const { data: userData, error: userError } = await this.supabase.auth.getUser();
+
+        if (userError || !userData.user) {
+            return { error: userError ?? new Error('No authenticated user'), count: 0 };
+        }
+
+        const result = await this.supabase
+            .from('user_books')
+            .select('*', { count: 'exact' })
+            .eq('user_id', userData.user.id);
+
+        if (result.error) {
+            return result;
+        }
+
+        if ((result.count ?? 0) > 0) {
+            return result;
+        }
+
+        const fallback = await this.supabase.from('books').select('*', { count: 'exact' });
+        return fallback;
     }
 
     async addBook(book: { title: string; author: string; isbn?: string; date_read?: string; notes?: string | null; rating?: number | null }) {
@@ -110,6 +255,17 @@ export class SupabaseService {
             bookId = insertedBook.id;
         }
 
+        const { data: userBooks, error: userBooksError } = await this.supabase
+            .from('user_books')
+            .select('column')
+            .eq('user_id', userData.user.id);
+
+        if (userBooksError) {
+            return { error: userBooksError };
+        }
+
+        const nextColumn = userBooks?.length ?? 0;
+
         const { data, error } = await this.supabase
             .from('user_books')
             .insert([
@@ -120,10 +276,20 @@ export class SupabaseService {
                     rating: typeof book.rating === 'number' ? Math.round(book.rating) : null,
                     date_read: book.date_read || new Date().toISOString().slice(0, 10),
                     status: 'completed',
+                    row: 0,
+                    column: nextColumn,
                 }
             ])
             .select();
 
         return { data, error };
+    }
+
+    async updateBookPosition(userBookId: number | string, row: number, column: number) {
+        return this.supabase
+            .from('user_books')
+            .update({ row, column })
+            .eq('id', userBookId)
+            .select();
     }
 }

@@ -4,6 +4,18 @@
         <button type="button" class="add-book" (click)="showAddModal.set(true)">
             Add Book
         </button>
+
+        <div class="order-toggle-wrap" aria-label="Toggle book order lock">
+            <span class="toggle-caption">Order</span>
+            <button type="button" class="order-toggle" role="switch" [attr.aria-checked]="!orderLocked()"
+                [attr.aria-label]="orderLocked() ? 'Unlock book order' : 'Lock book order'"
+                [class.is-unlocked]="!orderLocked()" (click)="toggleOrderLock()">
+                <span class="toggle-track">
+                    <span class="toggle-thumb"></span>
+                </span>
+            </button>
+            <span class="toggle-state-label">{{ orderLocked() ? 'Locked' : 'Unlocked' }}</span>
+        </div>
     </div>
     <div class="books-container mt-5">
         @if (loading()) {
@@ -11,13 +23,15 @@
         } @else if (books().length === 0) {
         <p class="text-center text-gray-500">No books found</p>
         } @else {
-        <div class="books-list">
-            @for (book of books(); track book.id) {
-            <div class="book-item border p-3 mb-2  gap-3 flex flex-row justify-between h-auto">
-                <div>
-                    <h3 class="max-w-50">{{ book.title }}</h3>
+        <div class="books-list" (dragover)="onDragOver($event)" (drop)="onDrop(books().length - 1, $event)">
+            @for (book of books(); track book.user_book_id ?? book.id; let index = $index) {
+            <div class="book-item" [draggable]="!orderLocked()" (dragstart)="onDragStart(index, $event)"
+                (dragover)="onDragOver($event)" (drop)="onDrop(index, $event)">
+                <div class="book-copy">
+                    <h3>{{ book.title }}</h3>
                     <p>{{ book.author }}</p>
                 </div>
+
                 @if (!hasFailedImage(book.isbn)) {
                 <figure>
                     <img [src]="getImageUrl(book.isbn)" alt="{{ book.title }}" loading="lazy"
@@ -30,9 +44,11 @@
         }
     </div>
 
+    @if (orderLocked()) {
     <app-navigation [page]="page()" [perPage]="perPage()" [listLength]="totalBooks()" [canGoPrevious]="canGoPrevious()"
         [canGoNext]="canGoNext()" (pageChange)="onPageChange($event)">
     </app-navigation>
+    }
 
     <app-add [isOpen]="showAddModal()" (close)="showAddModal.set(false)" (save)="onAddBook($event)"></app-add>
 

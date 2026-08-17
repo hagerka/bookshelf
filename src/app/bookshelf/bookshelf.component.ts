@@ -20,6 +20,9 @@ export class BookshelfComponent implements OnInit {
     totalBooks = signal(0);
     searchTerm = signal('');
     showAddModal = signal(false);
+    orderLocked = signal(true);
+    draggedIndex = signal<number | null>(null);
+    private dragOrderSnapshot: any[] = [];
 
     constructor(private supabaseService: SupabaseService) { }
 
@@ -41,11 +44,47 @@ export class BookshelfComponent implements OnInit {
     }
 
     canGoNext(): boolean {
-        if (this.hasActiveSearch) {
+        if (this.hasActiveSearch || !this.orderLocked()) {
             return false;
         }
 
         return this.page() < this.maxPage;
+    }
+
+    get effectivePerPage(): number {
+        if (!this.orderLocked()) {
+            return Math.max(this.totalBooks(), 1000);
+        }
+
+        return this.perPage();
+    }
+
+    toggleOrderLock() {
+        const nextLocked = !this.orderLocked();
+        this.orderLocked.set(nextLocked);
+
+        if (!nextLocked) {
+            this.page.set(0);
+            this.loadAllBooksForUnlock();
+        }
+    }
+
+    loadAllBooksForUnlock() {
+        this.loading.set(true);
+        const total = Math.max(this.totalBooks() || 0, 1000);
+
+        this.supabaseService.getBooks(0, total).then((result) => {
+            if (result.error) {
+                console.error(result.error);
+            } else {
+                this.books.set((result.data || []).map((book: any) => ({
+                    ...book,
+                    row: typeof book.row === 'number' ? book.row : 0,
+                    column: typeof book.column === 'number' ? book.column : 0,
+                })));
+            }
+            this.loading.set(false);
+        });
     }
 
     ngOnInit() {
@@ -65,17 +104,107 @@ export class BookshelfComponent implements OnInit {
 
     loadBooks() {
         this.loading.set(true);
-        console.log('Loading books for page:', this.page(), 'perPage:', this.perPage());
-        this.supabaseService.getBooks(this.page(), this.perPage()).then((result) => {
+        const perPage = this.effectivePerPage;
+        this.supabaseService.getBooks(this.page(), perPage).then((result) => {
             if (result.error) {
                 console.error(result.error);
             } else {
-                console.log('Supabase books result:', result);
-                console.log('Books data length:', result.data?.length ?? 0);
-                this.books.set(result.data || []);
+                this.books.set((result.data || []).map((book: any) => ({
+                    ...book,
+                    row: typeof book.row === 'number' ? book.row : 0,
+                    column: typeof book.column === 'number' ? book.column : 0,
+                })));
             }
             this.loading.set(false);
         });
+    }
+
+    getPositionKey(row: number, column: number): string {
+        return `${row}-${column}`;
+    }
+
+    reorderBooks(fromIndex: number, toIndex: number, books: any[] = this.books()) {
+        if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) {
+            return;
+        }
+
+        const currentBooks = [...books];
+        if (fromIndex >= currentBooks.length) {
+            return;
+        }
+
+        const [movedBook] = currentBooks.splice(fromIndex, 1);
+        const insertionIndex = Math.min(Math.max(toIndex, 0), currentBooks.length);
+        currentBooks.splice(insertionIndex, 0, movedBook);
+
+        const finalBooks = currentBooks.map((book, index) => ({
+            ...book,
+            row: 0,
+            column: index,
+        }));
+
+        this.books.set(finalBooks);
+        this.persistBookPositions(finalBooks);
+    }
+
+    persistBookPositions(books: any[]) {
+        Promise.allSettled(
+            books.map((book, index) => {
+                const userBookId = book.user_book_id ?? book.book_id;
+                if (!userBookId) {
+                    return Promise.resolve(null);
+                }
+
+                return this.supabaseService.updateBookPosition(userBookId, 0, index).then((result) => {
+                    if (result.error) {
+                        console.error('Failed to save book position', result.error);
+                    }
+                });
+            })
+        );
+    }
+
+    onDragStart(index: number, event: DragEvent) {
+        if (this.orderLocked()) {
+            event.preventDefault();
+            return;
+        }
+
+        this.draggedIndex.set(index);
+        this.dragOrderSnapshot = [...this.books()];
+        event.dataTransfer?.setData('text/plain', String(index));
+        if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed = 'move';
+        }
+    }
+
+    onDragOver(event: DragEvent) {
+        if (this.orderLocked()) {
+            return;
+        }
+
+        event.preventDefault();
+        if (event.dataTransfer) {
+            event.dataTransfer.dropEffect = 'move';
+        }
+    }
+
+    onDrop(targetIndex: number, event: DragEvent) {
+        if (this.orderLocked()) {
+            return;
+        }
+
+        event.preventDefault();
+        const sourceIndex = Number(event.dataTransfer?.getData('text/plain') ?? this.draggedIndex());
+
+        if (!Number.isFinite(sourceIndex)) {
+            return;
+        }
+
+        const baseBooks = this.dragOrderSnapshot.length > 0 ? this.dragOrderSnapshot : this.books();
+        this.reorderBooks(sourceIndex, targetIndex, baseBooks);
+        this.dragOrderSnapshot = [];
+        this.draggedIndex.set(null);
     }
 
     onPageChange(newPage: number) {
